@@ -325,37 +325,52 @@ class SecureChatServer:
     def generate_session_receipt(self, conn):
         """Generate and send session receipt for non-repudiation"""
         if not self.transcript:
+            print("[-] No transcript to save")
             return
             
-        # Compute transcript hash
-        transcript_data = "\n".join(self.transcript)
-        transcript_hash = hashlib.sha256(transcript_data.encode()).hexdigest()
-        
-        # Sign transcript hash
-        sig = rsa_sign(transcript_hash.encode(), self.private_key)
-        
-        receipt = {
-            "type": "receipt",
-            "peer": "server",
-            "first_seq": 1,
-            "last_seq": self.seqno,
-            "transcript_sha256": transcript_hash,
-            "sig": base64.b64encode(sig).decode()
-        }
-        
-        # Save transcript and receipt
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        transcript_file = f"server_transcript_{timestamp}.txt"
-        receipt_file = f"server_receipt_{timestamp}.json"
-        
-        with open(transcript_file, 'w') as f:
-            f.write(transcript_data)
+        try:
+            # Compute transcript hash
+            transcript_data = "\n".join(self.transcript)
+            transcript_hash = hashlib.sha256(transcript_data.encode()).hexdigest()
             
-        with open(receipt_file, 'w') as f:
-            json.dump(receipt, f, indent=2)
+            # Sign transcript hash
+            sig = rsa_sign(transcript_hash.encode(), self.private_key)
             
-        print(f"[+] Session receipt generated: {receipt_file}")
-        self.send_msg(conn, receipt)
+            receipt = {
+                "type": "receipt",
+                "peer": "server",
+                "first_seq": 1,
+                "last_seq": self.seqno,
+                "transcript_sha256": transcript_hash,
+                "sig": base64.b64encode(sig).decode()
+            }
+            
+            # Save transcript and receipt
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            transcript_file = f"server_transcript_{timestamp}.txt"
+            receipt_file = f"server_receipt_{timestamp}.json"
+            
+            # Get absolute path for clarity
+            transcript_path = os.path.abspath(transcript_file)
+            receipt_path = os.path.abspath(receipt_file)
+            
+            # Write transcript file
+            with open(transcript_path, 'w') as f:
+                f.write(transcript_data)
+            print(f"[+] Transcript saved: {transcript_path}")
+            
+            # Write receipt file
+            with open(receipt_path, 'w') as f:
+                json.dump(receipt, f, indent=2)
+            print(f"[+] Receipt saved: {receipt_path}")
+            
+            # Send receipt to client
+            self.send_msg(conn, receipt)
+            
+        except Exception as e:
+            print(f"[-] Error saving transcript/receipt: {e}")
+            import traceback
+            traceback.print_exc()
         
     def start(self):
         """Start the server"""

@@ -276,22 +276,36 @@ class SecureChatClient:
         
     def save_session_receipt(self, receipt):
         """Save session receipt and transcript"""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        # Save transcript
-        transcript_data = "\n".join(self.transcript)
-        transcript_file = f"client_transcript_{timestamp}.txt"
-        
-        with open(transcript_file, 'w') as f:
-            f.write(transcript_data)
+        if not self.transcript:
+            print("[-] No transcript to save")
+            return
             
-        # Save receipt
-        receipt_file = f"client_receipt_{timestamp}.json"
-        with open(receipt_file, 'w') as f:
-            json.dump(receipt, f, indent=2)
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
-        print(f"\n[+] Session transcript saved: {transcript_file}")
-        print(f"[+] Session receipt saved: {receipt_file}")
+            # Save transcript
+            transcript_data = "\n".join(self.transcript)
+            transcript_file = f"client_transcript_{timestamp}.txt"
+            
+            # Get absolute path for clarity
+            transcript_path = os.path.abspath(transcript_file)
+            
+            with open(transcript_path, 'w') as f:
+                f.write(transcript_data)
+            print(f"\n[+] Transcript saved: {transcript_path}")
+            
+            # Save receipt
+            receipt_file = f"client_receipt_{timestamp}.json"
+            receipt_path = os.path.abspath(receipt_file)
+            
+            with open(receipt_path, 'w') as f:
+                json.dump(receipt, f, indent=2)
+            print(f"[+] Receipt saved: {receipt_path}")
+            
+        except Exception as e:
+            print(f"[-] Error saving transcript/receipt: {e}")
+            import traceback
+            traceback.print_exc()
         
     def close(self):
         """Close connection"""
