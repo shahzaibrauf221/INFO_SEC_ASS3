@@ -1,0 +1,300 @@
+
+[+] Generating DH Parameters (p, g)
+======================================================================
+
+[✓] Prime (p):
+    32317006071311007300338913926423828248817941241140239112842009751400741706634354222619689417363569347117901737909704191754605873209195028853758986185622153212175412514901774520270235796078236248884246189477587641105928646099411723245426622522193230540919037680524235519125679715870117001058055877651038861847280257976054903569732561526167081339361799541336476559160368317896729073178384589680639671900977202194168647225871031411336429319536193471636533209717077448227988588565369208645296636077250268955505928362751121174096972998068410554359584866583291642136218231078990999448652468262416972035911852507045361090559
+
+[✓] Generator (g):
+    2
+
+[✓] Prime size: 2048 bits
+[✓] DH parameters generated successfully!
+
+======================================================================
+
+[+] DIFFIE-HELLMAN KEY EXCHANGE SIMULATION
+======================================================================
+
+[STEP 1] Generating shared parameters (p, g)
+[✓] Prime (p):     0xffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a...
+[✓] Generator (g): 2
+
+[STEP 2] Client generates key pair
+----------------------------------------------------------------------
+[CLIENT]
+  Private key (a): 0x48857d4718f8d338b5d3c938e898f6a94f3647059c02d380f9497cb0de...
+  Public key (A):  0x615730a731b70e723ca04937593e6450a0ddadb725cd2d67aba097b20c...
+  Computation: A = g^a mod p
+
+[STEP 3] Server generates key pair
+----------------------------------------------------------------------
+[SERVER]
+  Private key (b): 0x955b597b89e17290cb2f347f697bb04f9283307b38edd3728e9a6fd9f9...
+  Public key (B):  0x14c3af4a4b4126f0b7ca792d464537f54be474f02bca024cd1824f5db7...
+  Computation: B = g^b mod p
+
+[STEP 4] Computing shared secret
+----------------------------------------------------------------------
+[CLIENT] Receives B from server, computes: Ks = B^a mod p
+  Ks (client): 0x3385b310297d41a7baa6f4657df1182891e8dbdd56db5a896f8d50ef21...
+
+[SERVER] Receives A from client, computes: Ks = A^b mod p
+  Ks (server): 0x3385b310297d41a7baa6f4657df1182891e8dbdd56db5a896f8d50ef21...
+
+[STEP 5] Verifying shared secret
+----------------------------------------------------------------------
+[✓] SUCCESS: Both sides computed the same shared secret!
+[✓] Shared Secret (Ks) matches: True
+
+======================================================================
+DH Key Exchange completed successfully!
+======================================================================
+
+[+] SESSION KEY DERIVATION: K = Trunc16(SHA256(Ks))
+======================================================================
+
+[1] Performing DH key exchange...
+[✓] Shared Secret (Ks): 0xa14aa7a446203599aff8e475bdc10e33aa6542c34b6a968ca3c849b387...
+
+[2] Converting Ks to bytes (big-endian)...
+[✓] Ks (bytes): a14aa7a446203599aff8e475bdc10e33aa6542c34b6a968ca3c849b3871c...
+[✓] Byte length: 256 bytes
+
+[3] Computing SHA-256 hash of Ks...
+[✓] SHA-256(Ks): 407cf4af2370950abda9d8cb0bf3d83fc94eb91efca54d9491e7287cf1c29d40
+[✓] Hash length: 32 bytes (256 bits)
+
+[4] Truncating to 16 bytes for AES-128...
+[✓] Session Key (K): 407cf4af2370950abda9d8cb0bf3d83f
+[✓] Key length: 16 bytes (128 bits)
+
+======================================================================
+✓ Session key derived successfully for AES-128 encryption!
+======================================================================
+
+[+] AES-128 ENCRYPTION WITH DH-DERIVED SESSION KEY
+======================================================================
+
+[STEP 1] Performing Diffie-Hellman key exchange...
+[✓] DH exchange completed
+
+[STEP 2] Deriving AES-128 session key...
+[✓] Session Key (K): aac2fe0f23d2752feb7900ba0bb25537
+
+[STEP 3] Encrypting test message with AES-128-CBC...
+[+] Plaintext:  'This is a secure test message for INFO SEC Assignment!'
+[+] Length: 54 bytes
+
+[✓] IV:         60bd671e0abb1aace0174a0a4e0fa756
+[✓] Ciphertext: b5d926ba51b217b1d143a00af436d79a3a1c25da681f79c4dad52e4a6876daa8227e833892cad659204b2e790b4a4e025fed1d2c6c73d82bdad2e4d6cd9cc4c7
+[✓] Encrypted successfully with PKCS#7 padding
+
+[STEP 4] Decrypting ciphertext...
+[✓] Decrypted:  'This is a secure test message for INFO SEC Assignment!'
+
+[STEP 5] Verifying encryption/decryption integrity...
+[✓] SUCCESS: Plaintext matches decrypted text!
+[✓] AES-128 encryption working correctly with DH-derived key!
+
+======================================================================
+Complete encryption/decryption cycle successful!
+======================================================================
+
+
+================================================================================
+              COMPLETE SECURE CHAT PROTOCOL FLOW                      
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PHASE 1: CONTROL PLANE (Certificate Exchange & Authentication)         │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Client → Server: Client X.509 Certificate                               │
+│ Server → Client: Server X.509 Certificate                               │
+│                                                                          │
+│ Both sides verify:                                                       │
+│   ✓ Certificate signed by trusted CA                                    │
+│   ✓ Certificate not expired                                             │
+│   ✓ Common Name (CN) matches expected value                             │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PHASE 2: KEY AGREEMENT (Diffie-Hellman)                                 │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Client → Server: DH parameters (p, g) and public key A = g^a mod p     │
+│ Server → Client: DH public key B = g^b mod p                           │
+│                                                                          │
+│ Both compute shared secret:                                             │
+│   Client: Ks = B^a mod p                                                │
+│   Server: Ks = A^b mod p                                                │
+│                                                                          │
+│ Derive session key:                                                     │
+│   K = Trunc16(SHA-256(Ks))  [16 bytes for AES-128]                     │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PHASE 3: DATA PLANE (Encrypted Message Exchange)                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│ For EACH message:                                                        │
+│   1. Pad plaintext with PKCS#7                                          │
+│   2. Encrypt with AES-128-CBC using session key K                       │
+│   3. Compute digest: h = SHA-256(seqno || timestamp || ciphertext)     │
+│   4. Sign digest with RSA private key: sig = RSA-Sign(h)               │
+│   5. Send JSON: {seqno, timestamp, ciphertext, signature}              │
+│                                                                          │
+│ Receiver verifies EACH message:                                         │
+│   ✓ Sequence number is strictly increasing (replay protection)          │
+│   ✓ RSA signature valid using sender's public key                       │
+│   ✓ Decrypt ciphertext with session key K                               │
+│   ✓ Remove PKCS#7 padding                                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PHASE 4: TEAR DOWN (Non-Repudiation)                                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Both sides maintain append-only transcript:                             │
+│   seqno | timestamp | ciphertext | signature | peer_cert_fingerprint   │
+│                                                                          │
+│ On session end:                                                         │
+│   1. Compute TranscriptHash = SHA-256(entire transcript)                │
+│   2. Sign TranscriptHash with RSA private key                           │
+│   3. Create SessionReceipt: {transcript_hash, signature}                │
+│   4. Save receipt for offline verification                              │
+└─────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+               ✓ Complete CIANR Protocol Achieved                        
+================================================================================
+  C - Confidentiality:  AES-128 encryption
+  I - Integrity:        SHA-256 + RSA signatures
+  A - Authenticity:     X.509 certificates + RSA signatures
+  N - Non-Repudiation:  Signed session transcripts
+  R - Replay Protection: Sequence numbers + timestamps
+================================================================================
+
+[+] MESSAGE TAMPERING DETECTION TEST
+======================================================================
+
+[STEP 1] Original Message
+  Plaintext: Original message
+  Sequence: 1
+
+[STEP 2] Encrypted
+  Ciphertext: b70f3ce9c45d42c11d17c76ba04dfc95e19a455014aa6a447896da13912c...
+
+[STEP 3] Computed Digest
+  SHA-256: 4c63920267b1991a6b10bd299ba0d4402d13932595e8a94386d17a62feb2...
+
+[STEP 4] Signed Digest
+  Signature: 332c03d0970fe46e44212e7e1598d50df9ba2d8a0784f489a7c08a9fbcf5...
+
+[STEP 5] Verifying Original Message
+[✓] Signature valid - message integrity confirmed
+
+[STEP 6] Tampering with Ciphertext
+  Original CT: b70f3ce9c45d42c11d17c76ba04dfc95e19a4550...
+  Tampered CT: b60f3ce9c45d42c11d17c76ba04dfc95e19a4550...
+  Tampered digest: 13b392626b079e24c33e8b8098aacc241178e2f1587c6080b991723f9f34...
+
+[STEP 7] Verifying Tampered Message
+[✓] Signature invalid - tampering detected!
+[✓] Message integrity protection is working!
+
+======================================================================
+Tampering detection test completed successfully!
+======================================================================
+
+[+] REPLAY ATTACK PREVENTION TEST
+======================================================================
+
+[SCENARIO] Attacker captures message and tries to replay it
+----------------------------------------------------------------------
+
+[STEP 1] Normal Message Sequence
+  [✓] seqno 1: ACCEPTED (expected 1)
+  [✓] seqno 2: ACCEPTED (expected 2)
+  [✓] seqno 3: ACCEPTED (expected 3)
+
+[STEP 2] Attacker Replays Message #2
+  [✓] seqno 2: REJECTED
+  [✓] Expected seqno > 3, got 2
+  [✓] Replay attack prevented!
+
+[STEP 3] Attacker Replays Message #1
+  [✓] seqno 1: REJECTED
+  [✓] Replay attack prevented!
+
+======================================================================
+✓ Sequence number enforcement prevents replay attacks!
+======================================================================
+
+
+╔==============================================================================╗
+║                    SECURE CHAT - MASTER TEST SUITE                          ║
+╚==============================================================================╝
+
+================================================================================
+  DH Parameter Generation
+================================================================================
+
+✓ DH Parameter Generation - PASSED
+
+================================================================================
+  Complete DH Key Exchange
+================================================================================
+
+✓ Complete DH Key Exchange - PASSED
+
+================================================================================
+  Session Key Derivation
+================================================================================
+
+✓ Session Key Derivation - PASSED
+
+================================================================================
+  AES Encryption with DH Key
+================================================================================
+
+✓ AES Encryption with DH Key - PASSED
+
+================================================================================
+  Protocol Flow Diagram
+================================================================================
+
+✓ Protocol Flow Diagram - PASSED
+
+================================================================================
+  Message Tampering Detection
+================================================================================
+
+✓ Message Tampering Detection - PASSED
+
+================================================================================
+  Replay Attack Prevention
+================================================================================
+
+✓ Replay Attack Prevention - PASSED
+
+
+
+╔==============================================================================╗
+║                              TEST SUMMARY                                    ║
+╚==============================================================================╝
+
+Total Tests:  7
+Passed:       7 ✓
+Failed:       0 ✗
+
+Detailed Results:
+--------------------------------------------------------------------------------
+✓ PASS     DH Parameter Generation
+✓ PASS     Complete DH Key Exchange
+✓ PASS     Session Key Derivation
+✓ PASS     AES Encryption with DH Key
+✓ PASS     Protocol Flow Diagram
+✓ PASS     Message Tampering Detection
+✓ PASS     Replay Attack Prevention
+
+================================================================================
+✓ ALL TESTS PASSED!
+✓ Ready for assignment submission!
