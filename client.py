@@ -70,8 +70,12 @@ class SecureChatClient:
             
             # 2. Receive server hello and verify certificate
             server_hello = self.recv_msg()
-            if server_hello['type'] == 'error':
-                print(f"[-] Connection failed: {server_hello['message']}")
+            if not server_hello:
+                print("[-] No response from server")
+                return False
+
+            if server_hello.get('type') == 'error':
+                print(f"[-] Connection failed: {server_hello.get('message')}")
                 return False
                 
             server_cert_pem = server_hello['server_cert']
@@ -88,7 +92,8 @@ class SecureChatClient:
             print("[+] Server certificate verified")
             
             # 3. Initial DH exchange for registration/login
-            p, g = generate_dh_parameters()
+            # FIX: use generate_dh_params()
+            p, g = generate_dh_params()
             a, A = dh_generate_keypair(p, g)
             
             self.send_msg({
@@ -99,14 +104,17 @@ class SecureChatClient:
             })
             
             dh_server = self.recv_msg()
+            if not dh_server:
+                print("[-] No DH response from server")
+                return False
+
             B = dh_server['B']
             
             Ks = dh_compute_shared_secret(B, a, p)
             initial_key = derive_aes_key(Ks)
             
             # 4. Registration or Login
-            choice = input("Register (r) or Login (l)? ").lower()
-            
+            choice = input("Register (r) or Login (l)? ").lower().strip()
             if choice == 'r':
                 auth_data = self.get_registration_data()
             else:
@@ -124,14 +132,19 @@ class SecureChatClient:
             
             # Wait for auth response
             auth_response = self.recv_msg()
-            if not auth_response['success']:
+            if not auth_response:
+                print("[-] No auth response from server")
+                return False
+
+            if not auth_response.get('success'):
                 print("[-] Authentication failed")
                 return False
                 
             print("[+] Authentication successful")
             
             # 5. New DH exchange for chat session
-            p2, g2 = generate_dh_parameters()
+            # FIX: use generate_dh_params()
+            p2, g2 = generate_dh_params()
             a2, A2 = dh_generate_keypair(p2, g2)
             
             self.send_msg({
@@ -142,6 +155,10 @@ class SecureChatClient:
             })
             
             dh_server2 = self.recv_msg()
+            if not dh_server2:
+                print("[-] No second DH response from server")
+                return False
+
             B2 = dh_server2['B']
             
             Ks2 = dh_compute_shared_secret(B2, a2, p2)
@@ -199,6 +216,9 @@ class SecureChatClient:
             
             # Receive response
             response = self.recv_msg()
+            if not response:
+                print("[-] Server disconnected")
+                break
             
             if response['type'] == 'exit':
                 print("[+] Server closed connection")
@@ -213,7 +233,7 @@ class SecureChatClient:
                 
         # Receive session receipt
         receipt = self.recv_msg()
-        if receipt and receipt['type'] == 'receipt':
+        if receipt and receipt.get('type') == 'receipt':
             self.save_session_receipt(receipt)
             
     def encrypt_and_sign_message(self, message):
@@ -231,7 +251,10 @@ class SecureChatClient:
         
         # Add to transcript
         cert_fp = get_cert_fingerprint(self.cert)
-        self.transcript.append(f"{self.seqno}|{ts}|{base64.b64encode(full_ct).decode()}|{base64.b64encode(sig).decode()}|{cert_fp}")
+        self.transcript.append(
+            f"{self.seqno}|{ts}|{base64.b64encode(full_ct).decode()}|"
+            f"{base64.b64encode(sig).decode()}|{cert_fp}"
+        )
         
         return {
             "type": "msg",
@@ -269,7 +292,10 @@ class SecureChatClient:
         
         # Add to transcript
         cert_fp = get_cert_fingerprint(self.server_cert)
-        self.transcript.append(f"{seqno}|{ts}|{base64.b64encode(ct).decode()}|{base64.b64encode(sig).decode()}|{cert_fp}")
+        self.transcript.append(
+            f"{seqno}|{ts}|{base64.b64encode(ct).decode()}|"
+            f"{base64.b64encode(sig).decode()}|{cert_fp}"
+        )
         
         print(f"Server: {plaintext.decode()}")
         return True
@@ -286,8 +312,6 @@ class SecureChatClient:
             # Save transcript
             transcript_data = "\n".join(self.transcript)
             transcript_file = f"client_transcript_{timestamp}.txt"
-            
-            # Get absolute path for clarity
             transcript_path = os.path.abspath(transcript_file)
             
             with open(transcript_path, 'w') as f:
@@ -319,3 +343,4 @@ if __name__ == "__main__":
         client.chat()
         
     client.close()
+

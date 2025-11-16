@@ -11,6 +11,7 @@ import os
 import sys
 from datetime import datetime
 import time
+import hashlib  # FIX: needed for sha256 in generate_session_receipt
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from crypto_utils import *
@@ -70,7 +71,11 @@ class SecureChatServer:
         try:
             # 1. Certificate exchange and verification
             client_hello = self.recv_msg(conn)
-            if client_hello['type'] != 'hello':
+            if not client_hello:
+                print("[-] No hello message received")
+                return
+
+            if client_hello.get('type') != 'hello':
                 print("[-] Invalid hello message")
                 return
                 
@@ -103,6 +108,10 @@ class SecureChatServer:
             
             # 2. Initial DH exchange for registration/login encryption
             dh_client = self.recv_msg(conn)
+            if not dh_client:
+                print("[-] No DH client message")
+                return
+
             p = dh_client['p']
             g = dh_client['g']
             A = dh_client['A']
@@ -117,6 +126,9 @@ class SecureChatServer:
             
             # 3. Handle registration or login
             auth_msg = self.recv_msg(conn)
+            if not auth_msg:
+                print("[-] No auth message received")
+                return
             
             # Decrypt auth message
             iv = base64.b64decode(auth_msg['iv'])
@@ -139,6 +151,10 @@ class SecureChatServer:
             
             # 4. New DH exchange for chat session key
             dh_client2 = self.recv_msg(conn)
+            if not dh_client2:
+                print("[-] No second DH client message")
+                return
+
             p2 = dh_client2['p']
             g2 = dh_client2['g']
             A2 = dh_client2['A']
@@ -173,10 +189,12 @@ class SecureChatServer:
         try:
             with self.db.cursor() as cursor:
                 # Check if user exists
-                cursor.execute("SELECT * FROM users WHERE email = %s OR username = %s",
-                             (email, username))
+                cursor.execute(
+                    "SELECT * FROM users WHERE email = %s OR username = %s",
+                    (email, username)
+                )
                 if cursor.fetchone():
-                    print(f"[-] Registration failed: user already exists")
+                    print("[-] Registration failed: user already exists")
                     return False
                 
                 # Generate salt and hash password
@@ -209,13 +227,13 @@ class SecureChatServer:
                 user = cursor.fetchone()
                 
                 if not user:
-                    print(f"[-] Login failed: user not found")
+                    print("[-] Login failed: user not found")
                     return False
                 
                 # Verify password
                 pwd_hash = hash_password(password, user['salt'])
                 if pwd_hash != user['pwd_hash']:
-                    print(f"[-] Login failed: incorrect password")
+                    print("[-] Login failed: incorrect password")
                     return False
                 
                 self.username = user['username']
@@ -235,10 +253,11 @@ class SecureChatServer:
             try:
                 msg = self.recv_msg(conn)
                 if not msg:
+                    print("[-] Client disconnected")
                     break
                     
                 if msg['type'] == 'exit':
-                    print("[+] Client disconnected")
+                    print("[+] Client requested exit")
                     break
                     
                 if msg['type'] == 'msg':
@@ -292,7 +311,10 @@ class SecureChatServer:
         
         # Add to transcript
         cert_fp = get_cert_fingerprint(self.client_cert)
-        self.transcript.append(f"{seqno}|{ts}|{base64.b64encode(ct).decode()}|{base64.b64encode(sig).decode()}|{cert_fp}")
+        self.transcript.append(
+            f"{seqno}|{ts}|{base64.b64encode(ct).decode()}|"
+            f"{base64.b64encode(sig).decode()}|{cert_fp}"
+        )
         
         print(f"Client: {plaintext.decode()}")
         return True
@@ -312,7 +334,10 @@ class SecureChatServer:
         
         # Add to transcript
         cert_fp = get_cert_fingerprint(self.cert)
-        self.transcript.append(f"{self.seqno}|{ts}|{base64.b64encode(full_ct).decode()}|{base64.b64encode(sig).decode()}|{cert_fp}")
+        self.transcript.append(
+            f"{self.seqno}|{ts}|{base64.b64encode(full_ct).decode()}|"
+            f"{base64.b64encode(sig).decode()}|{cert_fp}"
+        )
         
         return {
             "type": "msg",
@@ -350,7 +375,6 @@ class SecureChatServer:
             transcript_file = f"server_transcript_{timestamp}.txt"
             receipt_file = f"server_receipt_{timestamp}.json"
             
-            # Get absolute path for clarity
             transcript_path = os.path.abspath(transcript_file)
             receipt_path = os.path.abspath(receipt_file)
             
@@ -400,3 +424,4 @@ class SecureChatServer:
 if __name__ == "__main__":
     server = SecureChatServer()
     server.start()
+

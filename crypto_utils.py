@@ -34,6 +34,9 @@ def verify_certificate(cert, ca_cert):
     try:
         from datetime import datetime
         now = datetime.utcnow()
+
+        # NOTE: This uses deprecated properties (hence the warning), but it still works.
+        # For the assignment you can ignore the warning.
         if now < cert.not_valid_before or now > cert.not_valid_after:
             return False, "Certificate expired or not yet valid"
 
@@ -87,6 +90,24 @@ def derive_aes_key(shared_secret):
     """Derive AES-128 key from DH shared secret using SHA-256"""
     secret_bytes = shared_secret.to_bytes((shared_secret.bit_length() + 7) // 8, 'big')
     return hashlib.sha256(secret_bytes).digest()[:16]
+
+# 🔹 NEW: wrappers to match client.py/server.py names 🔹
+
+def dh_generate_keypair(p, g):
+    """
+    Generate a Diffie-Hellman keypair (private exponent a, public A).
+    Private exponent a is chosen in [2, p-2].
+    """
+    # secrets.randbelow(p-3) gives [0, p-4], so +2 => [2, p-2]
+    a = secrets.randbelow(p - 3) + 2
+    A = compute_dh_public(g, a, p)
+    return a, A
+
+def dh_compute_shared_secret(other_public, my_private, p):
+    """
+    Compatibility wrapper around compute_shared_secret.
+    """
+    return compute_shared_secret(other_public, my_private, p)
 
 # ===================== AES Utilities =====================
 
